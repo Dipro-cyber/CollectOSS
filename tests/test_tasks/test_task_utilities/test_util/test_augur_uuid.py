@@ -1,12 +1,12 @@
 import pytest
 import uuid
-from augur.tasks.util.AugurUUID import AugurUUID, GithubUUID, GitlabUUID, UnresolvableUUID
+from collectoss.tasks.util.ContributorUUID import ContributorUUID, GithubUUID, GitlabUUID, UnresolvableUUID
 
-# AugurUUID tests
+# ContributorUUID tests
 
-# this checks whether a brand new AugurUUID object starts as 16 zero bytes
+# this checks whether a brand new ContributorUUID object starts as 16 zero bytes
 def test_augur_uuid_initializes_with_16_zero_bytes():
-    uid = AugurUUID()
+    uid = ContributorUUID()
     assert len(uid.bytes) == 16
     assert all(b == 0 for b in uid.bytes)
 
@@ -28,12 +28,12 @@ def test_github_uuid_set_user():
 
 # tests platform_id edge cases
 def test_set_platform_id_raises_on_non_integer():
-    uid = AugurUUID()
+    uid = ContributorUUID()
     with pytest.raises(ValueError):
         uid.set_platform_id("github")
 
 def test_set_platform_id_raises_on_overflow():
-    uid = AugurUUID()
+    uid = ContributorUUID()
     with pytest.raises(ValueError):
         uid.set_platform_id(256)  # too big for 1 byte
 
@@ -56,13 +56,13 @@ def test_to_uuid_returns_valid_uuid():
 
 # checks the start_byte is within range(0, 16) for set_bytes
 def test_set_bytes_raises_on_invalid_start_byte():
-    uid = AugurUUID()
+    uid = ContributorUUID()
     with pytest.raises(ValueError):
         uid.set_bytes([1, 2, 3], 16)
 
 # checks that set_bytes correctly raises an error when you write more bytes that will fit in the UUID starting at a given position
 def test_set_bytes_raises_on_too_many_bytes():
-    uid = AugurUUID()
+    uid = ContributorUUID()
     with pytest.raises(ValueError):
         uid.set_bytes([1] * 10, 10)
 
@@ -79,35 +79,35 @@ def test_write_int_with_non_integer():
         uid.write_int("abc", 1, 4)
 
 def test_write_int_and_get_int_roundtrip():
-    uid = AugurUUID()
+    uid = ContributorUUID()
     uid.write_int(65535, 1, 2)
     assert uid.get_int(1, 2) == 65535
 
 # checks __int__ method
 def test_int_conversion():
-    uid = AugurUUID()
+    uid = ContributorUUID()
     uid.set_byte(15, 1)
     assert int(uid) == 1
 
 def test_get_byte_invalid_index():
-    uid = AugurUUID()
+    uid = ContributorUUID()
     with pytest.raises(IndexError):
         uid.get_byte(20)
 
 # checks that set_byte correctly rejects a value that is too large
 def test_set_byte_raises_on_invalid_value():
-    uid = AugurUUID()
+    uid = ContributorUUID()
     with pytest.raises(ValueError):
         uid.set_byte(0, 256)  # too big for one byte
 
 # checks that set_byte rejects an index that doesnt exist
 def test_set_byte_raises_on_out_of_range_index():
-    uid = AugurUUID()
+    uid = ContributorUUID()
     with pytest.raises(IndexError):
         uid.set_byte(16, 1)  # index 16 is out of bounds
 
 def test_set_byte_raises_on_non_integer():
-    uid = AugurUUID()
+    uid = ContributorUUID()
     with pytest.raises(ValueError):
         uid.set_byte(0, "hello")
 
