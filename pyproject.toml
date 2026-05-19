@@ -156,6 +156,11 @@ testpaths = [
     # "tests/test_workers/worker_persistence/",
     # "tests/test_routes/runner.py"
 ]
+markers = [
+    "unit: pure logic tests with no external dependencies",
+    "integration: tests requiring a database, Redis, or network access",
+]
+
 
 [tool.mypy]
 files = ['collectoss/application/db/*.py']

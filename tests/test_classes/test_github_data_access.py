@@ -20,7 +20,7 @@ def gda(mock_key_manager, mock_logger):
     with patch("collectoss.tasks.github.util.github_data_access.KeyClient"):
         return GithubDataAccess(mock_key_manager, mock_logger)
 
-
+@pytest.mark.unit
 class TestEndpointUrl:
 
     def test_basic_path(self, gda):

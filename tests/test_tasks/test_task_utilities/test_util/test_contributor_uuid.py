@@ -3,6 +3,7 @@ import uuid
 from collectoss.tasks.util.ContributorUUID import ContributorUUID, GithubUUID, GitlabUUID, UnresolvableUUID
 
 # ContributorUUID tests
+@pytest.mark.unit
 class TestContributorUUID:
     # this checks whether a brand new ContributorUUID object starts as 16 zero bytes
     def test_augur_uuid_initializes_with_16_zero_bytes(self):

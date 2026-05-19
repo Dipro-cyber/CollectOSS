@@ -135,6 +135,7 @@ class TestJSONConfig:
         assert cfg.get_section("Section1") == expected_dict
 
 
+@pytest.mark.unit
 def test_dict_to_config_table_happy_path():
     input_dict = {
         "Section1": {"alpha": 1, "beta": "x"},
