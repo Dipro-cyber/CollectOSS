@@ -44,6 +44,6 @@ A script monitors the output logs and looks for specific log statements that ind
 Future end to end tests may also run CollectOSS to the point of fully collecting on some smaller repositories and validating that the database is as expected.
 
 
-If you have questions or would like to help please open an issue on GitHub_.
+If you have questions about testing in CollectOSS or would like to help please reach out via the `CHAOSS Slack <https://chaoss.community/kb-getting-started/>`_ (in the #wg-collectoss-8knot channel) or open an issue on GitHub_.
 
 .. _GitHub: https://github.com/chaoss/collectoss/issues
