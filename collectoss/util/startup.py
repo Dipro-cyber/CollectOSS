@@ -47,3 +47,10 @@ def collect_env_variables(logger):
         SystemEnv.set("COLLECTOSS_DB", db_string.replace("127.0.0.1", "host.docker.internal"))
     elif db_string and "127.0.0.1" in db_string:
         SystemEnv.set("COLLECTOSS_DB", db_string.replace("127.0.0.1", "host.docker.internal"))
+
+    # if user didnt specify gitlab credentials, just inject fake ones so we can start up.
+    if SystemEnv.get("COLLECTOSS_GITLAB_API_KEY") is None:
+        SystemEnv.set("COLLECTOSS_GITLAB_API_KEY", "fake")
+    if SystemEnv.get("COLLECTOSS_GITLAB_USERNAME") is None:
+        SystemEnv.set("COLLECTOSS_GITLAB_USERNAME", "fake")
+

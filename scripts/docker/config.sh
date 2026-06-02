@@ -50,26 +50,6 @@ function get_github_api_key() {
     echo
 }
 
-function get_gitlab_username() {
-    echo
-    echo "Please provide your username for GitLab."
-    echo "** This is required for CollectOSS to clone GitLab repos ***"
-    read -p "GitLab username: " gitlab_username
-    blank_confirm gitlab_username
-    echo
-}
-
-function get_gitlab_api_key() {
-    echo
-    echo "Please provide a valid GitLab API key."
-    echo "For more information on how to create the key, visit:"
-    echo "https://docs.collectoss.org/en/latest/getting-started/collecting-data.html"
-    echo "** This is required for CollectOSS to gather data ***"
-    read -p "GitLab API Key: " gitlab_api_key
-    blank_confirm gitlab_api_key
-    echo
-}
-
 function get_facade_repo_path() {
 
     echo "The Facade data collection worker will clone repositories to this machine to run its analysis."
@@ -162,28 +142,6 @@ function create_config() {
         echo "Using it in the config"
         echo "Please unset AUGUR_GITHUB_USERNAME if you would like to be prompted for a github username"
         github_username=$AUGUR_GITHUB_USERNAME
-        echo
-    fi
-
-    if [[ -z "${AUGUR_GITLAB_API_KEY}" ]]; then
-        get_gitlab_api_key
-    else
-        echo
-        echo "Found AUGUR_GITLAB_API_KEY environment variable"
-        echo "Using it in the config"
-        echo "Please unset AUGUR_GITLAB_API_KEY if you would like to be prompted for a gitlab api key"
-        gitlab_api_key=$AUGUR_GITLAB_API_KEY
-        echo
-    fi
-
-    if [[ -z "${AUGUR_GITLAB_USERNAME}" ]]; then
-        get_gitlab_username
-    else
-        echo
-        echo "Found AUGUR_GITLAB_USERNAME environment variable"
-        echo "Using it in the config"
-        echo "Please unset AUGUR_GITLAB_USERNAME if you would like to be prompted for a gitlab username"
-        gitlab_username=$AUGUR_GITLAB_USERNAME
         echo
     fi
 
