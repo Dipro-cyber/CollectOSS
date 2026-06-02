@@ -30,6 +30,7 @@ from collectoss.application.db.lib import get_value
 from collectoss.application.cli import test_connection, test_db_connection, with_database, DatabaseContext
 import sqlalchemy as s
 
+from collectoss.util.startup import check_init_schema
 from keyman.KeyClient import KeyClient, KeyPublisher
 
 reset_logs = SystemEnv.get_bool("AUGUR_RESET_LOGS", True)
@@ -60,6 +61,8 @@ def start(ctx, disable_collection, development, pidfile, port):
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGTERM, manager.shutdown_signal_handler)
     signal.signal(signal.SIGINT, manager.shutdown_signal_handler)
+
+    check_init_schema()
 
     try:
         if SystemEnv.get('COLLECTOSS_DOCKER_DEPLOY') != "1":

@@ -2,10 +2,6 @@
 #SPDX-License-Identifier: MIT
 set -e
 
-if [[ "$AUGUR_DB_SCHEMA_BUILD" == "1" ]]; then
-    collectoss db create-schema
-fi
-
 
 if [ ! -v AUGUR_NO_CONFIG ]; then
 	./scripts/docker/config.sh docker
