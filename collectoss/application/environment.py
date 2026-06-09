@@ -77,3 +77,10 @@ class SystemEnv:
             return
         
         os.environ[key] = value
+
+    @classmethod
+    def set_default(cls, key: str, value: str) -> None:
+        if cls.get(key) is None:
+            cls.set(key, value)
+            return value
+        return cls.get(key)
