@@ -115,4 +115,5 @@ RUN ln -s /cache /collectoss/collectoss/static/cache
 
 COPY --chmod=755 ./docker/backend/preflight.py /preflight.py
 RUN chmod +x /preflight.py
-CMD ["python3", "/preflight.py", "&", "collectoss", "backend", "start", "--pidfile", "/tmp/main.pid"]
+CMD python3 /preflight.py && collectoss backend start --pidfile /tmp/main.pid
+# CMD ["collectoss", "backend", "start", "--pidfile", "/tmp/main.pid"]
