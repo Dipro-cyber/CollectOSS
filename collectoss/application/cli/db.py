@@ -28,6 +28,8 @@ from collectoss.application.cli._csv_utils import (
     process_repo_csv,
     process_repo_group_csv,
 )
+from collectoss.application.environment import SystemEnv
+from collectoss.util.startup import check_init_schema, check_update_schema
 
 logger = logging.getLogger(__name__)
 
@@ -290,7 +292,7 @@ def upgrade_db_version():
     """
     Upgrade the configured database to the latest version
     """
-    check_call(["alembic", "upgrade", "head"])
+    check_update_schema()
 
 
 @cli.command("check-for-upgrade")
@@ -310,7 +312,8 @@ def create_schema():
     """
     Create schema in the configured database
     """
-    check_call(["alembic", "upgrade", "head"])
+    # check_call(["alembic", "upgrade", "head"])
+    check_init_schema()
 
 
 def generate_key(length):
@@ -379,7 +382,7 @@ def get_api_key(ctx):
     short_help="Check the ~/.pgpass file for CollectOSS's database credentials",
 )
 def check_pgpass():
-    db_environment_var = getenv("AUGUR_DB")
+    db_environment_var = SystemEnv.get("COLLECTOSS_DB")
     if db_environment_var:
         # gets the user, passowrd, host, port, and database_name out of environment variable
         # assumes database string of structure <beginning_of_db_string>//<user>:<password>@<host>:<port>/<database_name>
@@ -495,7 +498,7 @@ def run_psql_command_in_database(target_type, target):
         logger.error("Invalid target type. Exiting...")
         exit(1)
 
-    db_environment_var = getenv("AUGUR_DB")
+    db_environment_var = SystemEnv.get("COLLECTOSS_DB")
 
     # db_json_file_location = os.getcwd() + "/db.config.json"
     # db_json_exists = os.path.exists(db_json_file_location)

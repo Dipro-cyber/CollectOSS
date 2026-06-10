@@ -33,6 +33,8 @@ LABEL org.opencontainers.image.revision=${REVISION}
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/usr/bin/:/usr/local/bin:/usr/lib:${PATH}"
 
+ENV COLLECTOSS_DOCKER_DEPLOY="1"
+
 RUN set -x \
     && apt-get update \
     && apt-get -y install --no-install-recommends \
@@ -111,9 +113,7 @@ RUN ${SCORECARD_DIR}/scorecard version
 RUN mkdir -p repos/ logs/ /collectoss/facade/
 RUN ln -s /cache /collectoss/collectoss/static/cache
 
-# Copy in the entrypoint and init scripts, ensuring they are executable
-COPY --chmod=755 ./docker/backend/entrypoint.sh /
-COPY --chmod=755 ./docker/backend/init.sh /
-RUN chmod +x /entrypoint.sh /init.sh
-ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
-CMD ["/init.sh"]
+COPY --chmod=755 ./docker/backend/preflight.py /preflight.py
+RUN chmod +x /preflight.py
+CMD python3 /preflight.py && collectoss backend start --pidfile /tmp/main.pid
+# CMD ["collectoss", "backend", "start", "--pidfile", "/tmp/main.pid"]
