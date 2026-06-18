@@ -367,28 +367,32 @@ def retry_errored_repos(self):
         if machine_learning_phase.__name__ in enabled_phase_names:
             total_new_repos += len(get_newly_added_repos(session, logger, "ml"))
 
-    #TODO: Isaac needs to normalize the status's to be abstract in the 
-    #collection_status table once collectoss dev is less unstable dev is less unstable.
-    query = s.sql.text(f"""UPDATE collection_status SET secondary_status = '{CollectionState.PENDING.value}'"""
-    f""" WHERE secondary_status = '{CollectionState.ERROR.value}' and secondary_data_last_collected is NULL;"""
-    f"""UPDATE collection_status SET core_status = '{CollectionState.PENDING.value}'"""
-    f""" WHERE core_status = '{CollectionState.ERROR.value}' and core_data_last_collected is NULL;"""
-    f"""UPDATE collection_status SET facade_status = '{CollectionState.PENDING.value}'"""
-    f""" WHERE facade_status = '{CollectionState.ERROR.value}' and facade_data_last_collected is NULL;"""
-    f"""UPDATE collection_status SET ml_status = '{CollectionState.PENDING.value}'"""
-    f""" WHERE ml_status = '{CollectionState.ERROR.value}' and ml_data_last_collected is NULL;"""
-    
-    f"""UPDATE collection_status SET secondary_status = '{CollectionState.SUCCESS.value}'"""
-    f""" WHERE secondary_status = '{CollectionState.ERROR.value}' and secondary_data_last_collected is not NULL;"""
-    f"""UPDATE collection_status SET core_status = '{CollectionState.SUCCESS.value}'"""
-    f""" WHERE core_status = '{CollectionState.ERROR.value}' and core_data_last_collected is not NULL;"""
-    f"""UPDATE collection_status SET facade_status = '{CollectionState.SUCCESS.value}'"""
-    f""" WHERE facade_status = '{CollectionState.ERROR.value}' and facade_data_last_collected is not NULL;"""
-    f"""UPDATE collection_status SET ml_status = '{CollectionState.SUCCESS.value}'"""
-    f""" WHERE ml_status = '{CollectionState.ERROR.value}' and ml_data_last_collected is not NULL;"""
-    )
+    if total_new_repos == 0:
 
-    execute_sql(query)
+        #TODO: Isaac needs to normalize the status's to be abstract in the 
+        #collection_status table once collectoss dev is less unstable dev is less unstable.
+        query = s.sql.text(f"""UPDATE collection_status SET secondary_status = '{CollectionState.PENDING.value}'"""
+        f""" WHERE secondary_status = '{CollectionState.ERROR.value}' and secondary_data_last_collected is NULL;"""
+        f"""UPDATE collection_status SET core_status = '{CollectionState.PENDING.value}'"""
+        f""" WHERE core_status = '{CollectionState.ERROR.value}' and core_data_last_collected is NULL;"""
+        f"""UPDATE collection_status SET facade_status = '{CollectionState.PENDING.value}'"""
+        f""" WHERE facade_status = '{CollectionState.ERROR.value}' and facade_data_last_collected is NULL;"""
+        f"""UPDATE collection_status SET ml_status = '{CollectionState.PENDING.value}'"""
+        f""" WHERE ml_status = '{CollectionState.ERROR.value}' and ml_data_last_collected is NULL;"""
+        
+        f"""UPDATE collection_status SET secondary_status = '{CollectionState.SUCCESS.value}'"""
+        f""" WHERE secondary_status = '{CollectionState.ERROR.value}' and secondary_data_last_collected is not NULL;"""
+        f"""UPDATE collection_status SET core_status = '{CollectionState.SUCCESS.value}'"""
+        f""" WHERE core_status = '{CollectionState.ERROR.value}' and core_data_last_collected is not NULL;"""
+        f"""UPDATE collection_status SET facade_status = '{CollectionState.SUCCESS.value}'"""
+        f""" WHERE facade_status = '{CollectionState.ERROR.value}' and facade_data_last_collected is not NULL;"""
+        f"""UPDATE collection_status SET ml_status = '{CollectionState.SUCCESS.value}'"""
+        f""" WHERE ml_status = '{CollectionState.ERROR.value}' and ml_data_last_collected is not NULL;"""
+        )
+
+        execute_sql(query)
+    else:
+        logger.warning(f"Skipping retry of errored repos so we dont overwhelm collection when there are {total_new_repos} new repos to collect")
 
 
 
