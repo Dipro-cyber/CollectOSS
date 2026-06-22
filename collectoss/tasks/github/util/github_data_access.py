@@ -174,6 +174,7 @@ class GithubDataAccess:
                 response_status = int(resp_content.get("status"))
 
                 if response_status == 401 and response_msg == "Bad credentials":
+                    self.logger.warning(f"Received a 401 response from github due to bad credential: {mask_key(self.key)}")
                     raise NotAuthorizedException(f"Could not authorize with the github api because key was invalid: {mask_key(self.key)}")
                 else:
                     self.logger.warning(f"Received a 401 response from github unrelated to bad credentials with message {response_msg}")
