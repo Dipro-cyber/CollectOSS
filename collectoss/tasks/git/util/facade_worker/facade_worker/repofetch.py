@@ -25,6 +25,7 @@
 # and checks for any parents of HEAD that aren't already accounted for in the
 # repos. It also rebuilds analysis data, checks any changed affiliations and
 # aliases, and caches data for display.
+import logging
 import html.parser
 import subprocess
 import os
@@ -38,8 +39,62 @@ from collectoss.application.db.util import execute_session_query
 from collectoss.application.db.lib import execute_sql, get_repo_by_repo_git
 from typing_extensions import deprecated
 
+logger = logging.getLogger(__name__)
+
 class GitCloneError(Exception):
     pass
+
+
+def check_repo_size_limit(repo_git: str, max_clone_size_kb: int, clone_size_safety_margin: float = 0.5, logger=None):
+    """
+    Checks if a repository's estimated clone size exceeds max_clone_size_kb.
+    Returns (allowed: bool, reported_size_kb: Optional[int], estimated_size_kb: Optional[float]).
+    """
+    if not max_clone_size_kb or max_clone_size_kb <= 0:
+        return True, None, None
+
+    reported_size_kb = None
+
+    try:
+        if "github.com" in repo_git.lower():
+            from collectoss.tasks.github.util.util import get_owner_repo
+            from collectoss.tasks.github.util.github_data_access import GithubDataAccess
+            owner, repo = get_owner_repo(repo_git)
+            url = f"https://api.github.com/repos/{owner}/{repo}"
+            github_data_access = GithubDataAccess(None, logger)
+            result = github_data_access.get_resource(url)
+            if result and isinstance(result, dict) and "size" in result:
+                reported_size_kb = result["size"]
+        elif "gitlab.com" in repo_git.lower():
+            import httpx
+            from urllib.parse import quote_plus
+            git_clean = repo_git.rstrip('/')
+            if git_clean.endswith('.git'):
+                git_clean = git_clean[:-4]
+            parts = git_clean.split("gitlab.com/")
+            if len(parts) > 1:
+                project_path = parts[1]
+                encoded_path = quote_plus(project_path)
+                url = f"https://gitlab.com/api/v4/projects/{encoded_path}?statistics=true"
+                response = httpx.get(url, timeout=10.0)
+                if response.status_code == 200:
+                    data = response.json()
+                    stats = data.get("statistics", {})
+                    bytes_size = stats.get("repository_size") or data.get("repository_size")
+                    if bytes_size is not None:
+                        reported_size_kb = int(bytes_size / 1024)
+    except Exception as e:
+        if logger:
+            logger.warning(f"Could not retrieve repo size for {repo_git} via API: {e}")
+        return True, None, None
+
+    if reported_size_kb is not None:
+        estimated_size_kb = reported_size_kb * (1.0 + float(clone_size_safety_margin))
+        if estimated_size_kb > max_clone_size_kb:
+            return False, reported_size_kb, estimated_size_kb
+
+    return True, reported_size_kb, (reported_size_kb * (1.0 + float(clone_size_safety_margin))) if reported_size_kb is not None else None
+
 
 def git_repo_initialize(facade_helper, session, repo_git):
 
@@ -124,6 +179,16 @@ def git_repo_initialize(facade_helper, session, repo_git):
 
             execute_sql(query)
             return
+
+        max_limit = getattr(facade_helper, 'max_clone_size_kb', 0)
+        safety_margin = getattr(facade_helper, 'clone_size_safety_margin', 0.5)
+        if max_limit > 0:
+            allowed, reported_kb, estimated_kb = check_repo_size_limit(git, max_limit, safety_margin, logger)
+            if not allowed:
+                msg = f"Repo '{git}' estimated clone size ({estimated_kb:.0f} KB) exceeds maximum clone size limit ({max_limit} KB)"
+                update_repo_log(logger, facade_helper, row.repo_id, 'Failed (size limit)')
+                facade_helper.log_activity('Error', msg)
+                raise GitCloneError(msg)
 
         # Create the prerequisite directories
         try:
