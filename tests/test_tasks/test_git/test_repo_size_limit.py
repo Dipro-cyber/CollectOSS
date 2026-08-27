@@ -63,6 +63,18 @@ class TestRepoSizeLimit(unittest.TestCase):
         self.assertIsNone(reported_kb)
         self.assertIsNone(estimated_kb)
 
+    def test_is_valid_searchable_email(self):
+        from collectoss.tasks.github.facade_github.contributor_interfaceable.contributor_interface import is_valid_searchable_email
+        self.assertTrue(is_valid_searchable_email("user@example.org"))
+        self.assertTrue(is_valid_searchable_email("john.doe@company.co.uk"))
+
+        self.assertFalse(is_valid_searchable_email("root@augur"))
+        self.assertFalse(is_valid_searchable_email("michaelwoodruff@mwc-021001.dhcp.missouri.edu"))
+        self.assertFalse(is_valid_searchable_email("user@localhost"))
+        self.assertFalse(is_valid_searchable_email("invalid_email"))
+        self.assertFalse(is_valid_searchable_email(""))
+        self.assertFalse(is_valid_searchable_email(None))
+
 
 if __name__ == "__main__":
     unittest.main()
