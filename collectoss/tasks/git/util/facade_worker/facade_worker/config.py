@@ -135,7 +135,6 @@ class FacadeHelper():
         self.create_xlsx_summary_files = worker_options["create_xlsx_summary_files"]
         self.commit_messages = worker_options["commit_messages"]
         self.max_clone_size_kb = int(worker_options.get("max_clone_size_kb", 0))
-        self.clone_size_safety_margin = float(worker_options.get("clone_size_safety_margin", 0.5))
 
         self.tool_source = "Facade"
         self.data_source = "Git Log"

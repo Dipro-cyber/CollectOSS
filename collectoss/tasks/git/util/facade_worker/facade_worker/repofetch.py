@@ -45,13 +45,22 @@ class GitCloneError(Exception):
     pass
 
 
-def check_repo_size_limit(repo_git: str, max_clone_size_kb: int, clone_size_safety_margin: float = 0.5, logger=None):
+def check_repo_size_limit(repo_git: str, max_clone_size_kb: int, logger=None):
     """
-    Checks if a repository's estimated clone size exceeds max_clone_size_kb.
-    Returns (allowed: bool, reported_size_kb: Optional[int], estimated_size_kb: Optional[float]).
+    Checks if a repository's reported size exceeds max_clone_size_kb.
+
+    Uses the forge API's reported size (GitHub: size field in KB, GitLab:
+    repository_size in bytes) as a best-effort estimate. Note that forge-reported
+    sizes are measured from a bare repo and may differ from the actual on-disk
+    size after a full clone. Users should set max_clone_size_kb with this in mind.
+
+    If the size cannot be determined (API error, unsupported forge), cloning is
+    allowed to proceed.
+
+    Returns (allowed: bool, reported_size_kb: Optional[int]).
     """
     if not max_clone_size_kb or max_clone_size_kb <= 0:
-        return True, None, None
+        return True, None
 
     reported_size_kb = None
 
@@ -86,14 +95,12 @@ def check_repo_size_limit(repo_git: str, max_clone_size_kb: int, clone_size_safe
     except Exception as e:
         if logger:
             logger.warning(f"Could not retrieve repo size for {repo_git} via API: {e}")
-        return True, None, None
+        return True, None
 
-    if reported_size_kb is not None:
-        estimated_size_kb = reported_size_kb * (1.0 + float(clone_size_safety_margin))
-        if estimated_size_kb > max_clone_size_kb:
-            return False, reported_size_kb, estimated_size_kb
+    if reported_size_kb is not None and reported_size_kb > max_clone_size_kb:
+        return False, reported_size_kb
 
-    return True, reported_size_kb, (reported_size_kb * (1.0 + float(clone_size_safety_margin))) if reported_size_kb is not None else None
+    return True, reported_size_kb
 
 
 def git_repo_initialize(facade_helper, session, repo_git):
@@ -181,11 +188,10 @@ def git_repo_initialize(facade_helper, session, repo_git):
             return
 
         max_limit = getattr(facade_helper, 'max_clone_size_kb', 0)
-        safety_margin = getattr(facade_helper, 'clone_size_safety_margin', 0.5)
         if max_limit > 0:
-            allowed, reported_kb, estimated_kb = check_repo_size_limit(git, max_limit, safety_margin, logger)
+            allowed, reported_kb = check_repo_size_limit(git, max_limit, logger)
             if not allowed:
-                msg = f"Repo '{git}' estimated clone size ({estimated_kb:.0f} KB) exceeds maximum clone size limit ({max_limit} KB)"
+                msg = f"Repo '{git}' reported size ({reported_kb} KB) exceeds maximum clone size limit ({max_limit} KB)"
                 update_repo_log(logger, facade_helper, row.repo_id, 'Failed (size limit)')
                 facade_helper.log_activity('Error', msg)
                 raise GitCloneError(msg)
