@@ -1,7 +1,7 @@
 Quickstart
 ===============
 
-Select installation instructions from those most closely related to the operating system that you use below. CollectOSS currently supports Python 3.10 and Python 3.11.
+Select installation instructions from those most closely related to the operating system that you use below. CollectOSS aims to support all currently supported versions of Python. Python 3.10 and Python 3.11 are currently supported.
 
 .. toctree::
    :maxdepth: 2
