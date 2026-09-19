@@ -2,7 +2,7 @@
 
 
 
-FROM golang:1.23-bullseye AS golang-builder
+FROM golang:1.23-bookworm AS golang-builder
 
 # Write final binaries to / so it's easy to copy them out
 ENV GOBIN=/
@@ -17,7 +17,7 @@ RUN go install github.com/ossf/scorecard/v5@v5.1.1 \
 
 
 ########################################
-FROM python:3.11-slim-bullseye
+FROM python:3.11-slim-bookworm
 
 LABEL org.opencontainers.image.authors="CHAOSS https://chaoss.community"
 LABEL org.opencontainers.image.licenses="MIT"
