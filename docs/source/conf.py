@@ -35,6 +35,8 @@ from metadata import __copyright__, __release__, __version__, __author__
 #
 # needs_sphinx = '1.0'
 
+site_url = 'https://docs.collectoss.org'
+
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
