@@ -22,6 +22,21 @@ import sys
 import sphinx_rtd_theme
 import subprocess
 
+def is_head_reachable_from(branch_name: str) -> bool:
+    """
+    Checks if HEAD is an ancestor of (reachable from) the specified branch.
+    Returns True if returncode is 0, False otherwise.
+    """
+    try:
+        result = subprocess.run(
+            ['git', 'merge-base', '--is-ancestor', 'HEAD', branch_name],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        return result.returncode == 0
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return False
+
 rtd_version = os.environ.get('READTHEDOCS_VERSION')
 rtd_version_type = os.environ.get('READTHEDOCS_VERSION_TYPE')
 
@@ -29,8 +44,8 @@ if rtd_version:
     if rtd_version == 'latest':
         # RTD 'latest' maps to your primary development branch
         git_blob = 'main'
-    elif rtd_version == 'stable' or rtd_version_type == 'tag':
-        # RTD 'stable' or tagged releases
+    elif rtd_version == 'release' or rtd_version_type == 'tag':
+        # RTD 'release' or tagged releases
         git_blob = os.environ.get('READTHEDOCS_GIT_IDENTIFIER', rtd_version)
     else:
         # Custom branch names or PR previews
@@ -38,6 +53,9 @@ if rtd_version:
 else:
     # Fallback for local builds via git CLI
     try:
+
+        rtd_version = "release" if is_head_reachable_from("release") else "latest"
+    
         git_blob = (
             subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
             .strip()
@@ -103,6 +121,8 @@ redoc = [
     }
 ]
 
+sitemap_url_scheme = "{lang}{version}{link}"
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -124,7 +144,7 @@ author = __author__
 # built documents.
 #
 # The short X.Y version.
-version = __version__
+version = rtd_version
 # The full version, including alpha/beta/rc tags.
 release = __release__
 
