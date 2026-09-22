@@ -103,8 +103,8 @@ extensions = [
     'sphinx.ext.viewcode',
     # 'sphinx.ext.githubpages',
     'sphinx_rtd_theme',
-    'sphinxcontrib.openapi',
-    'sphinxcontrib.redoc',
+    # 'sphinxcontrib.openapi', # sphinx themed api docs
+    'sphinxcontrib.redoc', # fully different styled api docs page
 ]
 
 redoc = [
