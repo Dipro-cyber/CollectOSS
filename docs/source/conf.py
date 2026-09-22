@@ -100,7 +100,6 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.ifconfig',
-    'sphinx.ext.viewcode',
     # 'sphinx.ext.githubpages',
     'sphinx_rtd_theme',
     # 'sphinxcontrib.openapi', # sphinx themed api docs
