@@ -20,6 +20,37 @@
 import os
 import sys
 import sphinx_rtd_theme
+import subprocess
+
+rtd_version = os.environ.get('READTHEDOCS_VERSION')
+rtd_version_type = os.environ.get('READTHEDOCS_VERSION_TYPE')
+
+if rtd_version:
+    if rtd_version == 'latest':
+        # RTD 'latest' maps to your primary development branch
+        git_blob = 'main'
+    elif rtd_version == 'stable' or rtd_version_type == 'tag':
+        # RTD 'stable' or tagged releases
+        git_blob = os.environ.get('READTHEDOCS_GIT_IDENTIFIER', rtd_version)
+    else:
+        # Custom branch names or PR previews
+        git_blob = os.environ.get('READTHEDOCS_GIT_IDENTIFIER', rtd_version)
+else:
+    # Fallback for local builds via git CLI
+    try:
+        git_blob = (
+            subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+            .strip()
+            .decode('utf-8')
+        )
+        if git_blob == 'HEAD':
+            git_blob = (
+                subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+                .strip()
+                .decode('utf-8')
+            )
+    except Exception:
+        git_blob = 'main'
 
 here = os.path.abspath(os.path.dirname(__file__))
 
