@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 import collectoss.tasks.github.util.github_data_access
 from collectoss.tasks.git.util.facade_worker.facade_worker.repofetch import (
-    check_repo_size_limit, GitCloneError, _get_github_repo_size_kb, _get_gitlab_repo_size_kb
+    check_repo_size_limit, _get_github_repo_size_kb, _get_gitlab_repo_size_kb
 )
 
 
@@ -89,12 +89,14 @@ class TestRepoSizeLimit(unittest.TestCase):
     def test_github_truncated_tree_uses_partial_blob_data(self, mock_get_resource):
         """When the tree is truncated, partial blob data is still counted.
 
-        The GitHub git/trees API is NOT paginated for recursive requests.
-        truncated=True means entries were cut off, but the entries present
-        are still valid and should contribute to the size estimate.
+        GitHub's recursive tree endpoint returns up to 100,000 entries. When
+        truncated=True, full coverage requires traversing sub-trees individually
+        (not implemented here). Instead, the partial blob sizes in the response
+        are used as a lower-bound estimate. If the lower bound already exceeds
+        the limit, the clone is blocked.
         """
         # bare: 1000 KB, partial blobs (truncated): 800,000 bytes = ~781 KB
-        # total: ~1781 KB > 1500 KB limit
+        # total: ~1781 KB > 1500 KB limit → blocked
         mock_get_resource.side_effect = [
             {"size": 1000},
             {"truncated": True, "tree": [
@@ -109,9 +111,12 @@ class TestRepoSizeLimit(unittest.TestCase):
 
     @patch("collectoss.tasks.github.util.github_data_access.GithubDataAccess.get_resource")
     def test_github_truncated_tree_under_limit_still_allowed(self, mock_get_resource):
-        """Truncated tree with partial data that falls under the limit — still allowed.
+        """Truncated tree whose partial sum falls under the limit — clone is allowed.
 
-        The estimate is a lower bound when truncated, so we allow the clone.
+        The partial blob sum is a lower bound on the true working-tree size. When
+        that lower bound is still below the limit, we allow the clone. Operators
+        who want a tighter safety margin for repos near the limit should configure
+        a smaller max_clone_size_kb.
         """
         # bare: 500 KB, partial blobs: 100,000 bytes = ~98 KB → ~598 KB < 2000 KB
         mock_get_resource.side_effect = [
@@ -200,6 +205,30 @@ class TestRepoSizeLimit(unittest.TestCase):
             "https://gitlab.com/group/project", max_clone_size_kb=5000
         )
         self.assertFalse(allowed)
+        self.assertIsNone(estimated_kb)
+
+    @patch("httpx.get")
+    def test_gitlab_repo_under_limit(self, mock_httpx_get):
+        """GitLab repo below limit — clone is allowed."""
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {
+            "statistics": {"repository_size": 1024000}  # 1000 KB
+        }
+        mock_httpx_get.return_value = mock_response
+
+        allowed, estimated_kb = check_repo_size_limit(
+            "https://gitlab.com/group/project", max_clone_size_kb=5000
+        )
+        self.assertTrue(allowed)
+        self.assertAlmostEqual(estimated_kb, 1000.0, places=1)
+
+    def test_negative_limit_treated_as_disabled(self):
+        """A negative limit value is treated as disabled — clone is always allowed."""
+        allowed, estimated_kb = check_repo_size_limit(
+            "https://github.com/chaoss/CollectOSS", max_clone_size_kb=-1
+        )
+        self.assertTrue(allowed)
         self.assertIsNone(estimated_kb)
 
 

@@ -53,12 +53,20 @@ def _get_github_repo_size_kb(repo_git: str, logger=None):
       1. The bare repo size from the repo metadata API (GitHub 'size' field, in KB)
       2. The working tree blob sizes from /git/trees/HEAD?recursive=1 (in bytes)
 
-    If the tree response is truncated (too many entries for one page), the partial
-    blob data from the response is still used — GitHub does not paginate this endpoint,
-    so partial is all we can get. This is still more accurate than ignoring it.
+    When the tree response is truncated (more than 100,000 entries or 7 MB), GitHub
+    returns whatever entries fit and sets truncated=True. GitHub does provide a way
+    to get the full tree by fetching sub-trees individually via the non-recursive
+    endpoint, but that traversal is not implemented here — it would require multiple
+    round-trips for large repos and adds significant complexity.
 
-    Returns the estimated size in KB, or raises an exception if the API is unreachable
-    or returns unexpected data.
+    Instead, the partial blob data that IS returned is counted as a lower-bound
+    estimate. Combined with the bare repo size from the metadata API, this gives a
+    reasonable estimate for typical cases. If a repo is very close to the configured
+    limit, operators should set a smaller limit to account for this potential
+    undercount.
+
+    Returns the estimated size in KB, or raises an exception if the API returns
+    unexpected data or the request fails.
     """
     from collectoss.tasks.github.util.util import get_owner_repo
     from collectoss.tasks.github.util.github_data_access import GithubDataAccess
@@ -75,9 +83,10 @@ def _get_github_repo_size_kb(repo_git: str, logger=None):
     bare_size_kb = repo_info.get("size", 0) or 0
 
     # Part 2: working tree blob sizes
-    # Note: this endpoint is NOT paginated. truncated=True means the response was
-    # cut off due to size, but the entries that ARE present are still valid and
-    # should be counted. We use whatever partial data we received.
+    # GitHub's recursive tree endpoint returns up to 100,000 entries (7 MB limit).
+    # When truncated=True, the entries present are still valid and are counted here
+    # as a lower-bound estimate. Full traversal via individual sub-tree requests is
+    # possible but not implemented — see function docstring for the trade-off.
     tree_url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/HEAD?recursive=1"
     tree_data = github_data_access.get_resource(tree_url)
     if not isinstance(tree_data, dict):
@@ -91,7 +100,8 @@ def _get_github_repo_size_kb(repo_git: str, logger=None):
     if tree_data.get("truncated", False) and logger:
         logger.warning(
             f"Git tree response for {repo_git} was truncated — "
-            f"file size estimate uses partial data ({file_tree_bytes} bytes counted so far)"
+            f"size estimate is a lower bound ({file_tree_bytes} bytes counted from partial tree data). "
+            f"Consider setting a smaller limit if this repo is near your threshold."
         )
 
     return bare_size_kb + (file_tree_bytes / 1024)
