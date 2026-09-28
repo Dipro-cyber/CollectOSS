@@ -270,15 +270,20 @@ def git_repo_initialize(facade_helper, session, repo_git):
         if max_limit > 0:
             allowed, estimated_kb = check_repo_size_limit(git, max_limit, logger)
             if not allowed:
+                docs_ref = (
+                    "See max_clone_size_kb in the configuration reference: "
+                    "https://github.com/chaoss/CollectOSS/blob/main/docs/source"
+                    "/development-guide/configuration-file-reference.rst"
+                )
                 if estimated_kb is not None:
                     msg = (
                         f"Repo '{git}' estimated clone size ({estimated_kb:.0f} KB) "
-                        f"exceeds maximum clone size limit ({max_limit} KB)"
+                        f"exceeds maximum clone size limit ({max_limit} KB). {docs_ref}"
                     )
                 else:
                     msg = (
                         f"Repo '{git}' could not be size-checked; "
-                        f"blocking clone to enforce configured limit of {max_limit} KB"
+                        f"blocking clone to enforce configured limit of {max_limit} KB. {docs_ref}"
                     )
                 update_repo_log(logger, facade_helper, row.repo_id, 'Failed (size limit)')
                 facade_helper.log_activity('Error', msg)
